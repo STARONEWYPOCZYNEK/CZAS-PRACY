@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { calculateHours } from "@/lib/time/calculate";
+import { TimeSelect } from "@/components/time-select";
 import {
   adminCreateEntry,
   adminUpdateEntry,
@@ -86,18 +87,16 @@ function EntryFields({
         className="h-10 rounded border border-gray-300 px-2"
       />
       <div className="flex items-center gap-1">
-        <input
-          type="time"
+        <TimeSelect
+          compact
           value={form.startTime}
-          onChange={(e) => setForm({ ...form, startTime: e.target.value })}
-          className="h-10 w-24 rounded border border-gray-300 px-1"
+          onChange={(startTime) => setForm({ ...form, startTime })}
         />
         <span>–</span>
-        <input
-          type="time"
+        <TimeSelect
+          compact
           value={form.endTime}
-          onChange={(e) => setForm({ ...form, endTime: e.target.value })}
-          className="h-10 w-24 rounded border border-gray-300 px-1"
+          onChange={(endTime) => setForm({ ...form, endTime })}
         />
       </div>
       <input

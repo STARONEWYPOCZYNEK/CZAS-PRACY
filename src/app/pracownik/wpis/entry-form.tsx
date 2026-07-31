@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { calculateHours } from "@/lib/time/calculate";
+import { TimeSelect } from "@/components/time-select";
 import { createEntry, type EntryInput } from "./actions";
 
 interface WorkType {
@@ -25,55 +26,6 @@ function todayIso(): string {
 
 function emptyForm(): EntryInput {
   return { workDate: todayIso(), workTypeId: "", startTime: "", endTime: "", description: "" };
-}
-
-const HOURS = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, "0"));
-const MINUTES = ["00", "15", "30", "45"];
-
-function TimeSelect({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  const [hour = "", minute = ""] = value ? value.split(":") : [];
-
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="font-medium">{label}</span>
-      <div className="flex gap-2">
-        <select
-          value={hour}
-          onChange={(e) => onChange(`${e.target.value}:${minute || "00"}`)}
-          className="h-14 flex-1 rounded-lg border border-gray-300 px-2 text-lg"
-          required
-        >
-          <option value="">Godz.</option>
-          {HOURS.map((h) => (
-            <option key={h} value={h}>
-              {h}
-            </option>
-          ))}
-        </select>
-        <select
-          value={minute}
-          onChange={(e) => onChange(`${hour || "00"}:${e.target.value}`)}
-          className="h-14 flex-1 rounded-lg border border-gray-300 px-2 text-lg"
-          required
-        >
-          <option value="">Min.</option>
-          {MINUTES.map((m) => (
-            <option key={m} value={m}>
-              {m}
-            </option>
-          ))}
-        </select>
-      </div>
-    </div>
-  );
 }
 
 export function EntryForm({
