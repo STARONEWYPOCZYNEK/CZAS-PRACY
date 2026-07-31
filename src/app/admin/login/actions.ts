@@ -1,33 +1,51 @@
 "use server";
 
-import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-export async function sendMagicLink(email: string): Promise<{ error?: string; sent?: boolean }> {
+function friendlySendError(status: number | undefined): string {
+  if (status === 429) {
+    return "Zbyt wiele prób logowania w krótkim czasie. Spróbuj ponownie za około godzinę.";
+  }
+  return "Nie udało się wysłać kodu logowania. Spróbuj ponownie.";
+}
+
+export async function sendLoginCode(email: string): Promise<{ error?: string; sent?: boolean }> {
   if (!email || !email.includes("@")) {
     return { error: "Podaj poprawny adres e-mail" };
   }
 
-  const origin =
-    process.env.NEXT_PUBLIC_SITE_URL || (await headers()).get("origin") || "";
-
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: {
-      emailRedirectTo: `${origin}/admin/login/confirm`,
-    },
+    options: { shouldCreateUser: false },
   });
 
   if (error) {
-    if (error.status === 429) {
-      return {
-        error:
-          "Zbyt wiele prób logowania w krótkim czasie (limit wysyłki e-maili). Spróbuj ponownie za około godzinę.",
-      };
-    }
-    return { error: "Nie udało się wysłać linku logowania. Spróbuj ponownie." };
+    return { error: friendlySendError(error.status) };
   }
 
   return { sent: true };
+}
+
+export async function verifyLoginCode(
+  email: string,
+  code: string,
+): Promise<{ error: string } | never> {
+  if (!/^\d{6}$/.test(code)) {
+    return { error: "Kod musi mieć 6 cyfr" };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.verifyOtp({
+    email,
+    token: code,
+    type: "email",
+  });
+
+  if (error) {
+    return { error: "Nieprawidłowy lub wygasły kod. Poproś o nowy." };
+  }
+
+  redirect("/admin");
 }
