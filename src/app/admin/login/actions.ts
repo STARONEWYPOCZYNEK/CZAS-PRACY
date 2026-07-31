@@ -20,7 +20,13 @@ export async function sendMagicLink(email: string): Promise<{ error?: string; se
   });
 
   if (error) {
-    return { error: `DEBUG: ${error.status} ${error.message} (origin=${origin})` };
+    if (error.status === 429) {
+      return {
+        error:
+          "Zbyt wiele prób logowania w krótkim czasie (limit wysyłki e-maili). Spróbuj ponownie za około godzinę.",
+      };
+    }
+    return { error: "Nie udało się wysłać linku logowania. Spróbuj ponownie." };
   }
 
   return { sent: true };
