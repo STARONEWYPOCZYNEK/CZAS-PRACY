@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f6f7f9;
+  --foreground: #14181f;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+}
+
+html {
+  font-size: 18px;
+}
+
+@media (max-width: 640px) {
+  html {
+    font-size: 19px;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    Arial,
+    sans-serif;
+}
+
+/* Duży, dotykowy przycisk — podstawowy element interakcji w tej appce */
+.btn-big {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  text-align: center;
+  transition: filter 0.15s ease;
+}
+
+.btn-big:active {
+  filter: brightness(0.92);
+}
