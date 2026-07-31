@@ -4,17 +4,26 @@ import { requireAdmin } from "@/lib/admin/require-admin";
 import { getSettlement } from "../get-settlement";
 
 const styles = StyleSheet.create({
-  page: { padding: 32, fontSize: 11 },
-  title: { fontSize: 18, fontWeight: 700, marginBottom: 4 },
-  subtitle: { fontSize: 12, color: "#555", marginBottom: 16 },
-  row: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: "#ddd", paddingVertical: 6 },
-  headerRow: { flexDirection: "row", borderBottomWidth: 2, borderBottomColor: "#333", paddingBottom: 6, fontWeight: 700 },
-  cellWork: { width: "35%" },
-  cellRate: { width: "20%" },
-  cellHours: { width: "20%" },
-  cellAmount: { width: "25%", textAlign: "right" },
-  total: { marginTop: 16, fontSize: 14, fontWeight: 700, textAlign: "right" },
-  footer: { marginTop: 24, fontSize: 9, color: "#888" },
+  page: { padding: 28, fontSize: 9 },
+  title: { fontSize: 16, fontWeight: 700, marginBottom: 4 },
+  subtitle: { fontSize: 10, color: "#555", marginBottom: 14 },
+  row: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: "#ddd", paddingVertical: 5 },
+  headerRow: {
+    flexDirection: "row",
+    borderBottomWidth: 2,
+    borderBottomColor: "#333",
+    paddingBottom: 5,
+    fontWeight: 700,
+  },
+  cellDate: { width: "10%" },
+  cellWork: { width: "15%" },
+  cellTime: { width: "14%" },
+  cellHours: { width: "8%" },
+  cellRate: { width: "10%" },
+  cellAmount: { width: "11%", textAlign: "right" },
+  cellDesc: { width: "32%" },
+  total: { marginTop: 14, fontSize: 13, fontWeight: 700, textAlign: "right" },
+  footer: { marginTop: 20, fontSize: 8, color: "#888" },
 });
 
 function sanitizeFilename(value: string): string {
@@ -47,18 +56,26 @@ export async function GET(
         </Text>
 
         <View style={styles.headerRow}>
+          <Text style={styles.cellDate}>Data</Text>
           <Text style={styles.cellWork}>Rodzaj pracy</Text>
+          <Text style={styles.cellTime}>Godziny</Text>
+          <Text style={styles.cellHours}>Suma</Text>
           <Text style={styles.cellRate}>Stawka</Text>
-          <Text style={styles.cellHours}>Godziny</Text>
           <Text style={styles.cellAmount}>Kwota</Text>
+          <Text style={styles.cellDesc}>Opis</Text>
         </View>
 
-        {settlement.rows.map((row) => (
-          <View style={styles.row} key={row.workTypeId}>
+        {settlement.rows.map((row, i) => (
+          <View style={styles.row} key={i}>
+            <Text style={styles.cellDate}>{row.workDate}</Text>
             <Text style={styles.cellWork}>{row.workTypeName}</Text>
-            <Text style={styles.cellRate}>{row.hourlyRate.toFixed(2)} zł/h</Text>
+            <Text style={styles.cellTime}>
+              {row.startTime}–{row.endTime}
+            </Text>
             <Text style={styles.cellHours}>{row.hours.toFixed(2)} h</Text>
+            <Text style={styles.cellRate}>{row.hourlyRate.toFixed(2)} zł/h</Text>
             <Text style={styles.cellAmount}>{row.amount.toFixed(2)} zł</Text>
+            <Text style={styles.cellDesc}>{row.description}</Text>
           </View>
         ))}
 

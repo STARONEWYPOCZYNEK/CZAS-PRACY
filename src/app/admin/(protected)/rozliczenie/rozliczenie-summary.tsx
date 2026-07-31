@@ -62,18 +62,10 @@ export function RozliczenieSummary({
   function approve(summary: (typeof adjusted)[number]) {
     setError(null);
     startTransition(async () => {
-      const result = await approveSettlement(
-        summary.employeeId,
-        periodFrom,
-        periodTo,
-        summary.rows.map((r) => ({
-          workTypeId: r.workTypeId,
-          workTypeName: r.workTypeName,
-          hourlyRate: r.effectiveRate,
-          hours: r.hours,
-          amount: r.amount,
-        })),
+      const rateMap = Object.fromEntries(
+        summary.rows.map((r) => [r.workTypeId, r.effectiveRate]),
       );
+      const result = await approveSettlement(summary.employeeId, periodFrom, periodTo, rateMap);
       if ("error" in result) {
         setError(result.error);
         setConfirmingEmployeeId(null);

@@ -1,8 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 
 export interface SettlementRow {
+  workDate: string;
   workTypeId: string;
   workTypeName: string;
+  startTime: string;
+  endTime: string;
+  description: string;
   hourlyRate: number;
   hours: number;
   amount: number;
