@@ -32,8 +32,8 @@ export async function verifyLoginCode(
   email: string,
   code: string,
 ): Promise<{ error: string } | never> {
-  if (!/^\d{6}$/.test(code)) {
-    return { error: "Kod musi mieć 6 cyfr" };
+  if (!/^\d{8}$/.test(code)) {
+    return { error: "Kod musi mieć 8 cyfr" };
   }
 
   const supabase = await createClient();

@@ -66,17 +66,17 @@ export default function AdminLoginPage() {
       ) : (
         <form onSubmit={submitCode} className="flex flex-col gap-4">
           <p className="text-center text-gray-600">
-            Wysłaliśmy 6-cyfrowy kod na adres {email}. Wpisz go poniżej.
+            Wysłaliśmy 8-cyfrowy kod na adres {email}. Wpisz go poniżej.
           </p>
           <label className="flex flex-col gap-1">
             <span className="font-medium">Kod logowania</span>
             <input
               value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
               inputMode="numeric"
               autoFocus
               className="h-14 rounded-lg border border-gray-300 px-3 text-center text-2xl tracking-widest"
-              placeholder="000000"
+              placeholder="00000000"
               required
             />
           </label>
