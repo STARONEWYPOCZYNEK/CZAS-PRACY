@@ -25,9 +25,7 @@ export default function ConfirmLoginPage() {
 
       if (!accessToken || !refreshToken) {
         if (!cancelled) {
-          setError(
-            `DEBUG raw-hash=[${window.location.hash}] parsed-hash=[${hash}] at=[${window.location.href}]`,
-          );
+          setError("Link logowania jest nieprawidłowy lub wygasł. Poproś o nowy.");
         }
         return;
       }
