@@ -15,7 +15,7 @@ export async function sendMagicLink(email: string): Promise<{ error?: string; se
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${origin}/api/auth/callback`,
+      emailRedirectTo: `${origin}/admin/login/confirm`,
     },
   });
 

@@ -8,6 +8,11 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      // implicit zamiast domyślnego pkce: link logowania z maila może zostać
+      // otwarty w innej przeglądarce/kontekście niż ta, która go zażądała
+      // (np. wbudowana przeglądarka aplikacji Mail na telefonie) — pkce tego
+      // nie przetrwa, bo wymaga code_verifier z tej samej przeglądarki.
+      auth: { flowType: "implicit" },
       cookies: {
         getAll() {
           return cookieStore.getAll();
