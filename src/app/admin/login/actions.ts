@@ -20,7 +20,7 @@ export async function sendMagicLink(email: string): Promise<{ error?: string; se
   });
 
   if (error) {
-    return { error: "Nie udało się wysłać linku logowania. Spróbuj ponownie." };
+    return { error: `DEBUG: ${error.status} ${error.message} (origin=${origin})` };
   }
 
   return { sent: true };
