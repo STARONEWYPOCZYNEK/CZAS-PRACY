@@ -23,7 +23,7 @@ export default async function WpisyPage({
   let query = supabase
     .from("time_entries")
     .select(
-      "id, work_date, start_time, end_time, description, employee_id, work_type_id, employees(full_name), work_types(name)",
+      "id, work_date, start_time, end_time, description, employee_id, work_type_id, settlement_id, employees(full_name), work_types(name)",
     )
     .order("work_date", { ascending: false });
 
@@ -32,6 +32,12 @@ export default async function WpisyPage({
   if (params.to) query = query.lte("work_date", params.to);
 
   const { data: entries } = await query.limit(500);
+
+  const duplicateCounts = new Map<string, number>();
+  for (const e of entries ?? []) {
+    const key = `${e.employee_id}|${e.work_date}|${e.start_time}|${e.end_time}`;
+    duplicateCounts.set(key, (duplicateCounts.get(key) ?? 0) + 1);
+  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -77,17 +83,22 @@ export default async function WpisyPage({
       </form>
 
       <WpisyClient
-        entries={(entries ?? []).map((e) => ({
-          id: e.id,
-          workDate: e.work_date,
-          startTime: e.start_time,
-          endTime: e.end_time,
-          description: e.description,
-          employeeId: e.employee_id,
-          workTypeId: e.work_type_id,
-          employeeName: (e.employees as unknown as { full_name: string } | null)?.full_name ?? "—",
-          workTypeName: (e.work_types as unknown as { name: string } | null)?.name ?? "—",
-        }))}
+        entries={(entries ?? []).map((e) => {
+          const key = `${e.employee_id}|${e.work_date}|${e.start_time}|${e.end_time}`;
+          return {
+            id: e.id,
+            workDate: e.work_date,
+            startTime: e.start_time,
+            endTime: e.end_time,
+            description: e.description,
+            employeeId: e.employee_id,
+            workTypeId: e.work_type_id,
+            employeeName: (e.employees as unknown as { full_name: string } | null)?.full_name ?? "—",
+            workTypeName: (e.work_types as unknown as { name: string } | null)?.name ?? "—",
+            settled: e.settlement_id !== null,
+            isPossibleDuplicate: (duplicateCounts.get(key) ?? 0) > 1,
+          };
+        })}
         employees={employees ?? []}
         workTypes={(workTypes ?? []).filter((wt) => wt.active)}
       />

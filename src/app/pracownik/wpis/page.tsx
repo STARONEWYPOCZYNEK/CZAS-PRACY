@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getEmployeeIdFromSession } from "@/lib/employee-session/cookie";
-import { isWithinEditWindow } from "@/lib/time/calculate";
 import { logoutEmployee } from "../actions";
 import { EntryForm } from "./entry-form";
 
@@ -31,6 +30,7 @@ export default async function WpisPage() {
         "id, work_date, start_time, end_time, description, created_at, work_type_id, work_types(name)",
       )
       .eq("employee_id", employeeId)
+      .is("settlement_id", null)
       .order("work_date", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(20),
@@ -66,7 +66,6 @@ export default async function WpisPage() {
           description: e.description,
           workTypeId: e.work_type_id,
           workTypeName: (e.work_types as unknown as { name: string } | null)?.name ?? "—",
-          editable: isWithinEditWindow(e.created_at),
         }))}
       />
     </div>

@@ -4,6 +4,7 @@ import { signOutAdmin } from "../actions";
 
 const NAV_ITEMS = [
   { href: "/admin/rozliczenie", label: "Rozliczenie" },
+  { href: "/admin/rozliczone", label: "Rozliczone" },
   { href: "/admin/wpisy", label: "Wpisy" },
   { href: "/admin/pracownicy", label: "Pracownicy" },
   { href: "/admin/rodzaje-pracy", label: "Rodzaje pracy" },

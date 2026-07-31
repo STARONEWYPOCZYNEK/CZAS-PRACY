@@ -38,7 +38,8 @@ export default async function RozliczeniePage({
       "employee_id, start_time, end_time, employees(full_name), work_types(id, name, hourly_rate)",
     )
     .gte("work_date", from)
-    .lte("work_date", to);
+    .lte("work_date", to)
+    .is("settlement_id", null);
 
   if (params.employeeId) query = query.eq("employee_id", params.employeeId);
 
@@ -114,7 +115,7 @@ export default async function RozliczeniePage({
         </button>
       </form>
 
-      <RozliczenieSummary summaries={summaries} />
+      <RozliczenieSummary summaries={summaries} periodFrom={from} periodTo={to} />
     </div>
   );
 }

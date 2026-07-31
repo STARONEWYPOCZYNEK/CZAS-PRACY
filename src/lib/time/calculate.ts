@@ -68,10 +68,3 @@ export function summarizeEarnings(entries: EarningsEntry[]): EarningsSummary {
 export function round2(value: number): number {
   return Math.round(value * 100) / 100;
 }
-
-const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
-
-/** Czy wpis dodany o `createdAtIso` mieści się jeszcze w 24h oknie edycji przez pracownika. */
-export function isWithinEditWindow(createdAtIso: string): boolean {
-  return Date.now() - new Date(createdAtIso).getTime() < EDIT_WINDOW_MS;
-}

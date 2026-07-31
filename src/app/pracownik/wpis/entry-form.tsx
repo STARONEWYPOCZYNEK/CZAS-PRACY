@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { calculateHours } from "@/lib/time/calculate";
-import { createEntry, updateEntry, deleteEntry, type EntryInput } from "./actions";
+import { createEntry, type EntryInput } from "./actions";
 
 interface WorkType {
   id: string;
@@ -17,7 +17,6 @@ interface Entry {
   description: string;
   workTypeId: string;
   workTypeName: string;
-  editable: boolean;
 }
 
 function todayIso(): string {
@@ -85,56 +84,22 @@ export function EntryForm({
   entries: Entry[];
 }) {
   const [form, setForm] = useState<EntryInput>(emptyForm());
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isPending, startTransition] = useTransition();
-
-  function startEdit(entry: Entry) {
-    setEditingId(entry.id);
-    setForm({
-      workDate: entry.workDate,
-      workTypeId: entry.workTypeId,
-      startTime: entry.startTime.slice(0, 5),
-      endTime: entry.endTime.slice(0, 5),
-      description: entry.description,
-    });
-    setError(null);
-    setSuccess(false);
-  }
-
-  function cancelEdit() {
-    setEditingId(null);
-    setForm(emptyForm());
-    setError(null);
-  }
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setSuccess(false);
     startTransition(async () => {
-      const result = editingId
-        ? await updateEntry(editingId, form)
-        : await createEntry(form);
+      const result = await createEntry(form);
       if ("error" in result) {
         setError(result.error);
         return;
       }
       setSuccess(true);
-      setEditingId(null);
       setForm(emptyForm());
-    });
-  }
-
-  function remove(entryId: string) {
-    if (!confirm("Na pewno usunąć ten wpis?")) return;
-    setError(null);
-    startTransition(async () => {
-      const result = await deleteEntry(entryId);
-      if ("error" in result) {
-        setError(result.error);
-      }
     });
   }
 
@@ -144,9 +109,7 @@ export function EntryForm({
   return (
     <div className="flex flex-col gap-8">
       <form onSubmit={submit} className="flex flex-col gap-4 rounded-xl bg-white p-5 shadow ring-1 ring-gray-200">
-        <h2 className="text-xl font-semibold">
-          {editingId ? "Edytuj wpis" : "Nowy wpis"}
-        </h2>
+        <h2 className="text-xl font-semibold">Nowy wpis</h2>
 
         <label className="flex flex-col gap-1">
           <span className="font-medium">Data</span>
@@ -212,70 +175,38 @@ export function EntryForm({
         )}
         {success && <p className="font-medium text-green-700">Zapisano wpis.</p>}
 
-        <div className="flex gap-3">
-          <button
-            type="submit"
-            disabled={isPending}
-            className="btn-big flex-1 bg-blue-600 text-white disabled:opacity-50"
-          >
-            {isPending ? "Zapisywanie…" : "Zapisz"}
-          </button>
-          {editingId && (
-            <button
-              type="button"
-              onClick={cancelEdit}
-              className="btn-big bg-gray-100 text-gray-600"
-            >
-              Anuluj
-            </button>
-          )}
-        </div>
+        <button
+          type="submit"
+          disabled={isPending}
+          className="btn-big bg-blue-600 text-white disabled:opacity-50"
+        >
+          {isPending ? "Zapisywanie…" : "Zapisz"}
+        </button>
       </form>
 
       <div className="flex flex-col gap-3">
         <h2 className="text-xl font-semibold">Twoje ostatnie wpisy</h2>
+        <p className="text-sm text-gray-500">
+          Wpisy może teraz zmienić lub usunąć tylko administrator.
+        </p>
         {entries.length === 0 && <p className="text-gray-500">Brak wpisów.</p>}
-        {entries.map((entry) => {
-          return (
-            <div
-              key={entry.id}
-              className="flex flex-col gap-2 rounded-xl bg-white p-4 shadow ring-1 ring-gray-200"
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-semibold">{entry.workDate}</span>
-                <span className="text-gray-500">{entry.workTypeName}</span>
-              </div>
-              <p className="text-gray-700">
-                {entry.startTime.slice(0, 5)}–{entry.endTime.slice(0, 5)} (
-                {calculateHours(entry.startTime.slice(0, 5), entry.endTime.slice(0, 5)).toFixed(2)}{" "}
-                h)
-              </p>
-              {entry.description && <p className="text-gray-600">{entry.description}</p>}
-              {entry.editable ? (
-                <div className="flex gap-3 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => startEdit(entry)}
-                    className="text-blue-600 underline"
-                  >
-                    Edytuj
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => remove(entry.id)}
-                    className="text-red-600 underline"
-                  >
-                    Usuń
-                  </button>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-400">
-                  Minęło 24h — poproś administratora o zmianę
-                </p>
-              )}
+        {entries.map((entry) => (
+          <div
+            key={entry.id}
+            className="flex flex-col gap-2 rounded-xl bg-white p-4 shadow ring-1 ring-gray-200"
+          >
+            <div className="flex items-center justify-between">
+              <span className="font-semibold">{entry.workDate}</span>
+              <span className="text-gray-500">{entry.workTypeName}</span>
             </div>
-          );
-        })}
+            <p className="text-gray-700">
+              {entry.startTime.slice(0, 5)}–{entry.endTime.slice(0, 5)} (
+              {calculateHours(entry.startTime.slice(0, 5), entry.endTime.slice(0, 5)).toFixed(2)}{" "}
+              h)
+            </p>
+            {entry.description && <p className="text-gray-600">{entry.description}</p>}
+          </div>
+        ))}
       </div>
     </div>
   );

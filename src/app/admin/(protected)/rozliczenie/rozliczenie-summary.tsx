@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { round2 } from "@/lib/time/calculate";
+import { approveSettlement } from "./actions";
 
 interface Row {
   workTypeId: string;
@@ -21,8 +22,20 @@ function overrideKey(employeeId: string, workTypeId: string): string {
   return `${employeeId}:${workTypeId}`;
 }
 
-export function RozliczenieSummary({ summaries }: { summaries: Summary[] }) {
+export function RozliczenieSummary({
+  summaries,
+  periodFrom,
+  periodTo,
+}: {
+  summaries: Summary[];
+  periodFrom: string;
+  periodTo: string;
+}) {
   const [overrides, setOverrides] = useState<Record<string, number>>({});
+  const [confirmingEmployeeId, setConfirmingEmployeeId] = useState<string | null>(null);
+  const [approvedIds, setApprovedIds] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   function setRate(employeeId: string, workTypeId: string, value: string) {
     const parsed = Number(value.replace(",", "."));
@@ -32,20 +45,47 @@ export function RozliczenieSummary({ summaries }: { summaries: Summary[] }) {
     }));
   }
 
-  const adjusted = summaries.map((summary) => {
-    const rows = summary.rows.map((row) => {
-      const rate = overrides[overrideKey(summary.employeeId, row.workTypeId)] ?? row.hourlyRate;
-      return { ...row, effectiveRate: rate, amount: round2(row.hours * rate) };
+  const adjusted = summaries
+    .filter((s) => !approvedIds.includes(s.employeeId))
+    .map((summary) => {
+      const rows = summary.rows.map((row) => {
+        const rate = overrides[overrideKey(summary.employeeId, row.workTypeId)] ?? row.hourlyRate;
+        return { ...row, effectiveRate: rate, amount: round2(row.hours * rate) };
+      });
+      const totalAmount = round2(rows.reduce((sum, r) => sum + r.amount, 0));
+      return { ...summary, rows, totalAmount };
     });
-    const totalAmount = round2(rows.reduce((sum, r) => sum + r.amount, 0));
-    return { ...summary, rows, totalAmount };
-  });
 
   const grandTotalHours = round2(adjusted.reduce((sum, s) => sum + s.totalHours, 0));
   const grandTotalAmount = round2(adjusted.reduce((sum, s) => sum + s.totalAmount, 0));
 
+  function approve(summary: (typeof adjusted)[number]) {
+    setError(null);
+    startTransition(async () => {
+      const result = await approveSettlement(
+        summary.employeeId,
+        periodFrom,
+        periodTo,
+        summary.rows.map((r) => ({
+          workTypeId: r.workTypeId,
+          workTypeName: r.workTypeName,
+          hourlyRate: r.effectiveRate,
+          hours: r.hours,
+          amount: r.amount,
+        })),
+      );
+      if ("error" in result) {
+        setError(result.error);
+        setConfirmingEmployeeId(null);
+        return;
+      }
+      setApprovedIds((prev) => [...prev, summary.employeeId]);
+      setConfirmingEmployeeId(null);
+    });
+  }
+
   if (adjusted.length === 0) {
-    return <p className="text-gray-500">Brak wpisów w wybranym okresie.</p>;
+    return <p className="text-gray-500">Brak nierozliczonych wpisów w wybranym okresie.</p>;
   }
 
   return (
@@ -54,6 +94,12 @@ export function RozliczenieSummary({ summaries }: { summaries: Summary[] }) {
         Stawkę można ręcznie zmienić tylko dla tego rozliczenia (poniżej) — nie zmienia to
         domyślnej stawki w „Rodzaje pracy”.
       </p>
+
+      {error && (
+        <p className="font-medium text-red-600" role="alert">
+          {error}
+        </p>
+      )}
 
       <div className="flex flex-col gap-6">
         {adjusted.map((summary) => (
@@ -94,9 +140,39 @@ export function RozliczenieSummary({ summaries }: { summaries: Summary[] }) {
                 ))}
               </tbody>
             </table>
-            <p className="mt-3 text-lg font-semibold">
-              Razem: {summary.totalHours.toFixed(2)} h — {summary.totalAmount.toFixed(2)} zł
-            </p>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-lg font-semibold">
+                Razem: {summary.totalHours.toFixed(2)} h — {summary.totalAmount.toFixed(2)} zł
+              </p>
+
+              {confirmingEmployeeId === summary.employeeId ? (
+                <div className="flex flex-wrap items-center gap-2 rounded-lg bg-amber-50 p-3 ring-1 ring-amber-200">
+                  <span className="font-medium text-amber-800">
+                    Zatwierdzić? Wpisy z tego okresu zostaną zablokowane do edycji.
+                  </span>
+                  <button
+                    onClick={() => approve(summary)}
+                    disabled={isPending}
+                    className="rounded bg-green-600 px-3 py-1.5 text-white disabled:opacity-50"
+                  >
+                    Tak, zatwierdź
+                  </button>
+                  <button
+                    onClick={() => setConfirmingEmployeeId(null)}
+                    className="rounded bg-white px-3 py-1.5 ring-1 ring-gray-300"
+                  >
+                    Anuluj
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmingEmployeeId(summary.employeeId)}
+                  className="rounded-lg bg-green-600 px-4 py-2 font-semibold text-white"
+                >
+                  Zatwierdź rozliczenie
+                </button>
+              )}
+            </div>
           </div>
         ))}
       </div>
