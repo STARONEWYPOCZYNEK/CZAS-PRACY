@@ -14,7 +14,12 @@ export default async function WpisPage() {
   const supabase = createAdminClient();
 
   const [{ data: employee }, { data: workTypes }, { data: entries }] = await Promise.all([
-    supabase.from("employees").select("id, full_name").eq("id", employeeId).maybeSingle(),
+    supabase
+      .from("employees")
+      .select("id, full_name")
+      .eq("id", employeeId)
+      .eq("active", true)
+      .maybeSingle(),
     supabase
       .from("work_types")
       .select("id, name")
@@ -32,7 +37,12 @@ export default async function WpisPage() {
   ]);
 
   if (!employee) {
-    redirect("/pracownik");
+    // Konto usunięte/dezaktywowane od czasu wystawienia cookie. Cookie nie da się
+    // wyczyścić bezpośrednio tutaj (Server Component), więc przekierowanie idzie
+    // przez /pracownik/reset (route handler) — inaczej /pracownik widziałoby
+    // wciąż "ważne" (poprawnie podpisane) cookie i odsyłało z powrotem tutaj,
+    // tworząc nieskończoną pętlę przekierowań.
+    redirect("/pracownik/reset");
   }
 
   return (

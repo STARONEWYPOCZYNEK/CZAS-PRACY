@@ -176,7 +176,7 @@ export function EntryForm({
           </select>
         </label>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col gap-3">
           <TimeSelect
             label="Rozpoczęcie"
             value={form.startTime}
