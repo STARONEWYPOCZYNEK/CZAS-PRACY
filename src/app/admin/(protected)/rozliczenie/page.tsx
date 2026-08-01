@@ -8,11 +8,13 @@ interface SearchParams {
   to?: string;
 }
 
-function defaultMonthRange() {
+function currentMonthStart(): string {
   const now = new Date();
-  const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-  const to = now.toISOString().slice(0, 10);
-  return { from, to };
+  return new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+}
+
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
 export default async function RozliczeniePage({
@@ -21,16 +23,27 @@ export default async function RozliczeniePage({
   searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
-  const defaults = defaultMonthRange();
-  const from = params.from || defaults.from;
-  const to = params.to || defaults.to;
-
   const supabase = await createClient();
 
   const { data: employees } = await supabase
     .from("employees")
     .select("id, full_name")
     .order("full_name");
+
+  // Domyślny zakres = od najstarszego nierozliczonego wpisu, żeby zaległe dni
+  // (np. wprowadzone z opóźnieniem) nie zniknęły po cichu z podsumowania —
+  // dopiero jeśli w ogóle nie ma nierozliczonych wpisów, wracamy do bieżącego miesiąca.
+  let earliestUnsettledQuery = supabase
+    .from("time_entries")
+    .select("work_date")
+    .is("settlement_id", null)
+    .order("work_date", { ascending: true })
+    .limit(1);
+  if (params.employeeId) earliestUnsettledQuery = earliestUnsettledQuery.eq("employee_id", params.employeeId);
+  const { data: earliestUnsettled } = await earliestUnsettledQuery.maybeSingle();
+
+  const from = params.from || earliestUnsettled?.work_date || currentMonthStart();
+  const to = params.to || todayIso();
 
   let query = supabase
     .from("time_entries")
@@ -44,6 +57,19 @@ export default async function RozliczeniePage({
   if (params.employeeId) query = query.eq("employee_id", params.employeeId);
 
   const { data: rows } = await query;
+
+  // Ostrzeżenie na wypadek gdyby admin ręcznie zawęził zakres i zostawił
+  // starsze nierozliczone wpisy poza widokiem — zawsze widoczne, niezależnie
+  // od tego czy zakres jest domyślny czy wybrany ręcznie.
+  let olderUnsettledCountQuery = supabase
+    .from("time_entries")
+    .select("id", { count: "exact", head: true })
+    .is("settlement_id", null)
+    .lt("work_date", from);
+  if (params.employeeId) {
+    olderUnsettledCountQuery = olderUnsettledCountQuery.eq("employee_id", params.employeeId);
+  }
+  const { count: olderUnsettledCount } = await olderUnsettledCountQuery;
 
   const byEmployee = new Map<
     string,
@@ -114,6 +140,14 @@ export default async function RozliczeniePage({
           Przelicz
         </button>
       </form>
+
+      {(olderUnsettledCount ?? 0) > 0 && (
+        <p className="rounded-lg bg-amber-50 p-3 font-medium text-amber-800 ring-1 ring-amber-200">
+          Uwaga: poza wybranym zakresem jest jeszcze {olderUnsettledCount}{" "}
+          {olderUnsettledCount === 1 ? "starszy nierozliczony wpis" : "starszych nierozliczonych wpisów"}{" "}
+          (przed {from}) — nieujęte w poniższym podsumowaniu. Cofnij datę „Od”, żeby je zobaczyć.
+        </p>
+      )}
 
       <RozliczenieSummary summaries={summaries} periodFrom={from} periodTo={to} />
     </div>
