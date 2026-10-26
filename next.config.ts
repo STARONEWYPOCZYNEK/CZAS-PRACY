@@ -8,6 +8,10 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Czcionki do PDF czytane z dysku w runtime — bez tego nie trafiają do funkcji na Vercel.
+  outputFileTracingIncludes: {
+    "/admin/rozliczone/*": ["src/assets/fonts/**/*"],
+  },
   async headers() {
     return [
       {

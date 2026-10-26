@@ -100,7 +100,7 @@ export default async function RozliczonePage({
                   <td className="p-3">{Number(s.total_hours).toFixed(2)} h</td>
                   <td className="p-3">{Number(s.total_amount).toFixed(2)} zł</td>
                   <td className="p-3 text-gray-500">
-                    {new Date(s.approved_at).toLocaleString("pl-PL")}
+                    {new Date(s.approved_at).toLocaleString("pl-PL", { timeZone: "Europe/Warsaw" })}
                   </td>
                   <td className="p-3 whitespace-nowrap">
                     <a

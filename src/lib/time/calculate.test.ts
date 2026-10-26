@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateHours, summarizeEarnings } from "./calculate";
+import { calculateHours, summarizeEarnings, summarizeRowsByWorkType } from "./calculate";
 
 describe("calculateHours", () => {
   it("liczy zwykłą zmianę w ciągu dnia", () => {
@@ -40,5 +40,26 @@ describe("summarizeEarnings", () => {
     expect(result.rows).toEqual([]);
     expect(result.totalHours).toBe(0);
     expect(result.totalAmount).toBe(0);
+  });
+});
+
+describe("summarizeRowsByWorkType", () => {
+  it("sumuje godziny i kwoty per rodzaj pracy, posortowane alfabetycznie", () => {
+    const result = summarizeRowsByWorkType([
+      { workTypeId: "z", workTypeName: "Zacisze", hours: 6, amount: 150 },
+      { workTypeId: "m", workTypeName: "Myjnia", hours: 8, amount: 200 },
+      { workTypeId: "m", workTypeName: "Myjnia", hours: 4.5, amount: 112.5 },
+      { workTypeId: "i", workTypeName: "Inne", hours: 3.25, amount: 81.25 },
+    ]);
+
+    expect(result).toEqual([
+      { workTypeId: "i", workTypeName: "Inne", hours: 3.25, amount: 81.25 },
+      { workTypeId: "m", workTypeName: "Myjnia", hours: 12.5, amount: 312.5 },
+      { workTypeId: "z", workTypeName: "Zacisze", hours: 6, amount: 150 },
+    ]);
+  });
+
+  it("zwraca pustą listę dla braku wierszy", () => {
+    expect(summarizeRowsByWorkType([])).toEqual([]);
   });
 });

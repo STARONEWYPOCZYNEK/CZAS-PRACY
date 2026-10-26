@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
-import ExcelJS from "exceljs";
 import { requireAdmin } from "@/lib/admin/require-admin";
 import { getSettlement } from "../get-settlement";
+import { buildSettlementWorkbook } from "./build-workbook";
 
 function sanitizeFilename(value: string): string {
   return value
@@ -23,54 +23,7 @@ export async function GET(
     return new NextResponse("Nie znaleziono rozliczenia", { status: 404 });
   }
 
-  const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet("Rozliczenie");
-
-  sheet.columns = [
-    { width: 12 },
-    { width: 18 },
-    { width: 10 },
-    { width: 10 },
-    { width: 10 },
-    { width: 14 },
-    { width: 12 },
-    { width: 40 },
-  ];
-
-  sheet.addRow([`Pracownik: ${settlement.employeeName}`]);
-  sheet.addRow([`Okres: ${settlement.periodFrom} – ${settlement.periodTo}`]);
-  sheet.addRow([]);
-
-  const headerRow = sheet.addRow([
-    "Data",
-    "Rodzaj pracy",
-    "Rozpoczęcie",
-    "Zakończenie",
-    "Godziny",
-    "Stawka (zł/h)",
-    "Kwota (zł)",
-    "Opis",
-  ]);
-  headerRow.font = { bold: true };
-
-  for (const row of settlement.rows) {
-    sheet.addRow([
-      row.workDate,
-      row.workTypeName,
-      row.startTime,
-      row.endTime,
-      row.hours,
-      row.hourlyRate,
-      row.amount,
-      row.description,
-    ]);
-  }
-
-  sheet.addRow([]);
-  const totalRow = sheet.addRow(["Razem", "", "", "", settlement.totalHours, "", settlement.totalAmount]);
-  totalRow.font = { bold: true };
-
-  const buffer = await workbook.xlsx.writeBuffer();
+  const buffer = await buildSettlementWorkbook(settlement).xlsx.writeBuffer();
   const filename = `rozliczenie-${sanitizeFilename(settlement.employeeName)}-${settlement.periodFrom}.xlsx`;
 
   return new NextResponse(new Uint8Array(buffer), {
